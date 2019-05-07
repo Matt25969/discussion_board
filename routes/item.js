@@ -32,6 +32,35 @@ router.post("/createItem", (req, res) => {
 
   array.push(newItem);
 
+  res.send("Success");
+
+});
+
+// @route   PUT item/updateItem
+// @desc    Update first Item
+// @access  Public
+router.put("/updateItem", (req,res) => {
+
+  const newItem = {
+    username: req.body.username,
+    content: req.body.content
+  };
+
+  array[0] = newItem;
+
+  res.send("Success");
+
+});
+
+// @route   DELETE item/deleteItem
+// @desc    Delete first Item
+// @access  Public
+router.delete("/deleteItem", (req,res) => {
+
+  array.splice(0,1);
+
+  res.send("Success");
+
 });
 
 module.exports = router;
