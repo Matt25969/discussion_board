@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-let array = [];
+const Item = require("../models/Item");
 
 // @route   GET item/test
 // @desc    Tests route
@@ -15,9 +15,35 @@ router.get("/test", (req, res) => {
 // @route   GET item/all
 // @desc    Get all items
 // @access  Public
-
 router.get("/all", (req, res) => {
-    res.send(array);
+  const errors = {};
+  Item.find()
+    .then(items => {
+      if (!items) {
+        errors.noItems = "There are no items";
+        res.status(404).json(errors);
+      }
+
+      res.json(items);
+    })
+    .catch(err => res.status(404).json({ noItems: "There are no items" }));
+});
+
+// @route   GET item/username
+// @desc    Get all items from one username
+// @access  Public
+router.get("/username", (req, res) => {
+  const errors = {};
+  Item.find({username:req.body.username})
+    .then(items => {
+      if (!items) {
+        errors.noItems = "There are no items";
+        res.status(404).json(errors);
+      }
+
+      res.json(items);
+    })
+    .catch(err => res.status(404).json({ noItems: "There are no items" }));
 });
 
 // @route   POST item/createItem
@@ -25,14 +51,14 @@ router.get("/all", (req, res) => {
 // @access  Public
 router.post("/createItem", (req, res) => {
 
-    const newItem = {
+    const newItem = new Item({
       username: req.body.username,
       content: req.body.content
-    };
+    });
 
-  array.push(newItem);
+    newItem.save().then(item => res.json(item))
+    .catch(err => console.log(err));
 
-  res.send("Success");
 
 });
 
@@ -41,14 +67,32 @@ router.post("/createItem", (req, res) => {
 // @access  Public
 router.put("/updateItem", (req,res) => {
 
-  const newItem = {
+  const newItem = new Item({
     username: req.body.username,
     content: req.body.content
-  };
+  });
 
-  array[0] = newItem;
+  Item.findById(req.body._id)
+    .then(items => {
+      if (!items) {
+        errors.noItem = "There are no items with this ID";
+        res.status(404).json(errors);
+      }
 
-  res.send("Success");
+      items
+      .remove()
+      .then(() => {
+        res.json({ success: true });
+      })
+      .catch(err =>
+        res.status(404).json({ itemnotfound: "No item found" })
+      );
+
+      newItem.save().then(item => res.json(item))
+      .catch(err => console.log(err));
+    
+    })
+    .catch(err => res.status(404).json({ noItem: "There are is no item with this ID" }));
 
 });
 
@@ -56,10 +100,18 @@ router.put("/updateItem", (req,res) => {
 // @desc    Delete first Item
 // @access  Public
 router.delete("/deleteItem", (req,res) => {
-
-  array.splice(0,1);
-
-  res.send("Success");
+  
+  Item.findById(req.body._id).then(item => {
+    
+    item
+      .remove()
+      .then(() => {
+        res.json({ success: true });
+      })
+      .catch(err =>
+        res.status(404).json({ itemnotfound: "No item found" })
+      );
+  });
 
 });
 
