@@ -11,6 +11,10 @@ const ItemSchema = new Schema({
   content: {
     type: String,
     required: true
+  },
+  email: {
+    type: String,
+    required: true
   }
 });
 
