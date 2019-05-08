@@ -20,18 +20,12 @@ router.get("/test", (req, res) => {
 // @access  Public
 router.get("/all", (req, res) => {
   const errors = {};
-  Item.find()
+  Item.find({}, '-email -username')
     .then(items => {
       if (!items) {
         errors.noItems = "There are no items";
         res.status(404).json(errors);
       }
-
-      for (let [index, element] of items.entries()) {
-        if (element.email != undefined){
-          element.email=undefined;
-        }
-    }
 
       res.json(items);
     })
@@ -43,13 +37,12 @@ router.get("/all", (req, res) => {
 // @access  Public
 router.get("/username", (req, res) => {
   const errors = {};
-  Item.find({username:req.body.username})
+  Item.find({ username: req.body.username })
     .then(items => {
       if (!items) {
         errors.noItems = "There are no items";
         res.status(404).json(errors);
       }
-
       res.json(items);
     })
     .catch(err => res.status(404).json({ noItems: "There are no items" }));
@@ -63,27 +56,27 @@ router.post("/createItem", (req, res) => {
   if (!isValid) {
     return res.status(400).json(errors);
   }
-    const newItem = new Item({
-      username: req.body.username,
-      content: req.body.content,
-      email: req.body.email
+  const newItem = new Item({
+    username: req.body.username,
+    content: req.body.content,
+    email: req.body.email
+  });
+
+  bcrypt.genSalt(10, (err, salt) => {
+    bcrypt.hash(newItem.email, salt, (err, hash) => {
+      if (err) throw err;
+      newItem.email = hash;
+      newItem.save().then(item => res.json(item))
+        .catch(err => console.log(err));
     });
 
-    bcrypt.genSalt(10, (err, salt) => {
-      bcrypt.hash(newItem.email, salt, (err, hash) => {
-        if (err) throw err;
-        newItem.email = hash;
-        newItem.save().then(item => res.json(item))
-        .catch(err => console.log(err));
-      });
-
-});
+  });
 });
 
 // @route   PUT item/updateItem
 // @desc    Update first Item
 // @access  Public
-router.put("/updateItem", (req,res) => {
+router.put("/updateItem", (req, res) => {
 
   const newItem = new Item({
     username: req.body.username,
@@ -91,24 +84,26 @@ router.put("/updateItem", (req,res) => {
   });
 
   Item.findById(req.body._id)
-    .then(items => {
-      if (!items) {
+    .then(item => {
+      if (!item) {
         errors.noItem = "There are no items with this ID";
         res.status(404).json(errors);
       }
 
-      items
-      .remove()
-      .then(() => {
-        res.json({ success: true });
-      })
-      .catch(err =>
-        res.status(404).json({ itemnotfound: "No item found" })
-      );
+      //desctructure changhe it up
 
-      newItem.save().then(item => res.json(item))
-      .catch(err => console.log(err));
-    
+      // items
+      //   .remove()
+      //   .then(() => {
+      //     res.json({ success: true });
+      //   })
+      //   .catch(err =>
+      //     res.status(404).json({ itemnotfound: "No item found" })
+      //   );
+
+      item.save().then(item => res.json(item))
+        .catch(err => console.log(err));
+
     })
     .catch(err => res.status(404).json({ noItem: "There are is no item with this ID" }));
 
@@ -117,21 +112,19 @@ router.put("/updateItem", (req,res) => {
 // @route   DELETE item/deleteItem
 // @desc    Delete first Item
 // @access  Public
-router.delete("/deleteItem", (req,res) => {
+router.delete("/deleteItem", (req, res) => {
 
-let errors = {};
+  let errors = {};
 
-const email = req.body.email;
-const id = req.body._id;
+  const email = req.body.email;
+  const id = req.body._id;
 
   Item.findById(id).then(item => {
 
     bcrypt.compare(email, item.email).then(isMatch => {
       if (isMatch) {
-        
-        Item.findById(id).then(item => {
 
-          item
+        item
           .remove()
           .then(() => {
             res.json({ success: true });
@@ -139,17 +132,15 @@ const id = req.body._id;
           .catch(err =>
             res.status(404).json({ itemnotfound: "No item found" })
           );
-      
-        } );
 
       } else {
         errors.email = "Email Incorrect";
         return res.status(400).json(errors);
       }
     });
- 
+
   }).catch(err => res.status(404).json({ noItem: "There is no item with this ID" }));
-  
+
 });
 
 module.exports = router;
