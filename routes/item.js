@@ -3,6 +3,8 @@ const router = express.Router();
 
 const Item = require("../models/Item");
 
+const validateItemInput = require("../validation/item");
+
 // @route   GET item/test
 // @desc    Tests route
 // @access  Public
@@ -50,7 +52,10 @@ router.get("/username", (req, res) => {
 // @desc    Create an Item
 // @access  Public
 router.post("/createItem", (req, res) => {
-
+  const { errors, isValid } = validateItemInput(req.body);
+  if (!isValid) {
+    return res.status(400).json(errors);
+  }
     const newItem = new Item({
       username: req.body.username,
       content: req.body.content
